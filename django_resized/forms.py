@@ -62,6 +62,9 @@ class ResizedImageFieldFile(ImageField.attr_class):
 
         img = normalize_rotation(img)
 
+        if img.mode == 'P' and self.field.force_format in ['JPEG', 'PNG']:
+            img = img.convert('RGB')
+
         if not self.field.keep_meta:
             image_without_exif = Image.new(img.mode, img.size)
             image_without_exif.putdata(img.getdata())
