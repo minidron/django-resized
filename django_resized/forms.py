@@ -14,7 +14,9 @@ except ImportError:
 DEFAULT_SIZE = getattr(settings, 'DJANGORESIZED_DEFAULT_SIZE', [1920, 1080])
 DEFAULT_QUALITY = getattr(settings, 'DJANGORESIZED_DEFAULT_QUALITY', 0)
 DEFAULT_KEEP_META = getattr(settings, 'DJANGORESIZED_DEFAULT_KEEP_META', True)
-DEFAULT_FORCE_FORMAT = getattr(settings, 'DJANGORRESIZED_DEFAULT_FORCE_FORMAT', None)
+DEFAULT_FORCE_FORMAT = getattr(settings, 'DJANGORESIZED_DEFAULT_FORCE_FORMAT', None)
+DEFAULT_FORMAT_EXTENSIONS = getattr(settings, 'DJANGORESIZED_DEFAULT_FORMAT_EXTENSIONS', {})
+DEFAULT_NORMALIZE_ROTATION = getattr(settings, 'DJANGORESIZED_DEFAULT_NORMALIZE_ROTATION', True)
 
 
 def normalize_rotation(image):
@@ -60,16 +62,14 @@ class ResizedImageFieldFile(ImageField.attr_class):
         content.file.seek(0)
         img = Image.open(content.file)
 
-        img = normalize_rotation(img)
-
         if img.mode == 'P' and self.field.force_format in ['JPEG', 'PNG']:
             img = img.convert('RGB')
 
-        if not self.field.keep_meta:
-            image_without_exif = Image.new(img.mode, img.size)
-            image_without_exif.putdata(img.getdata())
-            image_without_exif.format = img.format
-            img = image_without_exif
+        if img.mode == 'RGBA' and self.field.force_format in ['JPEG']:
+            img = img.convert('RGB')
+
+        if DEFAULT_NORMALIZE_ROTATION:
+            img = normalize_rotation(img)
 
         if self.field.crop:
             thumb = ImageOps.fit(
@@ -85,10 +85,14 @@ class ResizedImageFieldFile(ImageField.attr_class):
             )
             thumb = img
 
+        img_info = img.info
+        if not self.field.keep_meta:
+            img_info.pop('exif', None)
+
         ImageFile.MAXBLOCK = max(ImageFile.MAXBLOCK, thumb.size[0] * thumb.size[1])
         new_content = BytesIO()
         img_format = img.format if self.field.force_format is None else self.field.force_format
-        thumb.save(new_content, format=img_format, quality=self.field.quality, **img.info)
+        thumb.save(new_content, format=img_format, quality=self.field.quality, **img_info)
         new_content = ContentFile(new_content.getvalue())
 
         name = self.get_name(name, img_format)
@@ -97,6 +101,7 @@ class ResizedImageFieldFile(ImageField.attr_class):
     def get_name(self, name, format):
         extensions = Image.registered_extensions()
         extensions = {v: k for k, v in extensions.items()}
+        extensions.update(DEFAULT_FORMAT_EXTENSIONS)
         if format in extensions:
             name = name.rsplit('.', 1)[0] + extensions[format]
         return name

@@ -12,7 +12,7 @@ Features
 Installation
 ============
 
-::
+.. code-block:: bash
 
     pip install django-resized
 
@@ -20,17 +20,24 @@ Installation
 Configuration (optional)
 ========================
 
-settings.py ::
+settings.py
+
+.. code-block:: python
 
     DJANGORESIZED_DEFAULT_SIZE = [1920, 1080]
     DJANGORESIZED_DEFAULT_QUALITY = 75
     DJANGORESIZED_DEFAULT_KEEP_META = True
     DJANGORESIZED_DEFAULT_FORCE_FORMAT = 'JPEG'
+    DJANGORESIZED_DEFAULT_FORMAT_EXTENSIONS = {'JPEG': ".jpg"}
+    DJANGORESIZED_DEFAULT_NORMALIZE_ROTATION = True
+    
 
 Usage
 =====
 
-models.py ::
+models.py
+
+.. code-block:: python
 
     from django_resized import ResizedImageField
 
@@ -50,13 +57,13 @@ Options
 - **crop** - resize and crop. ['top', 'left'] - top left corner, ['middle', 'center'] is center cropping, ['bottom', 'right'] - crop right bottom corner.
 - **quality** - quality of resized image 1..100
 - **keep_meta** - keep EXIF and other meta data, default True
-- **force_format** - force the format of the resized image, available format are the one supported by `pillow <http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html>`_, default None
+- **force_format** - force the format of the resized image, available formats are the one supported by `pillow <http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html>`_, default to None
 
 
 How to run tests
 ================
 
-::
+.. code-block:: bash
 
     pip install tox
     tox
